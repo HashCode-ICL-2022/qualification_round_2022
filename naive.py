@@ -18,7 +18,7 @@ def has_skill_level(c, role, workers):
         if role[0] in skills else 0
 
     if role[1] <= level:
-        return True, False
+        return True, role[1] == level
     elif role[1] == level + 1:
         for w in workers:
             if has_skill_level(w, role, []):
@@ -51,6 +51,8 @@ def naive(contributors, projects):
 
             projects_in_progress.pop(i)
 
+            print(level_ups)
+
             if any(level_ups):
                 for lu, w, skill in zip(level_ups, workers, project.get("roles")):
                     if lu:
@@ -61,8 +63,10 @@ def naive(contributors, projects):
                         skill_index = skill_names.index(skill_name)
                         _, workers_level = worker_skills[skill_index]
 
-                        w.get("skills").remove(skill_index)
+                        w.get("skills").pop(skill_index)
                         w.get("skills").append((skill_name, workers_level + 1))
+
+                        print(w.get("name"), workers_level, workers_level + 1)
 
                     available_contributors.append(w)
             
