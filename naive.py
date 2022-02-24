@@ -6,23 +6,25 @@ from import_file import load
 from copy import deepcopy
 from pprint import pprint
 
+from tqdm import tqdm
+
 def has_skill_level(c, role, workers):
     skills, levels = zip(*c.get("skills"))
 
     if role[0] not in skills and role[1] > 1:
-        return False
+        return False, None
 
     level = levels[skills.index(role[0])] \
         if role[0] in skills else 0
 
     if role[1] <= level:
-        return True
+        return True, False
     elif role[1] == level + 1:
         for w in workers:
             if has_skill_level(w, role, []):
-                return True
+                return True, True
 
-    return False
+    return False, None
     
 
 def project_score(p, t):
@@ -37,28 +39,54 @@ def naive(contributors, projects):
 
     time = 0
 
+    print("Running Naive Algorithm")
+
+    pbar = tqdm(total=len(projects_available))
+
     while len(projects_available) > 0:
 
-        for i, (project, workers, end_time) in enumerate(deepcopy(projects_in_progress)):
+        for i, (project, workers, level_ups, end_time) in enumerate(deepcopy(projects_in_progress)):
             if end_time > time:
                 continue
 
             projects_in_progress.pop(i)
-            available_contributors.extend(workers)
+
+            if any(level_ups):
+                for lu, w, skill in zip(level_ups, workers, project.get("roles")):
+                    if lu:
+                        worker_skills = w.get("skills")
+                        skill_names = list(map(itemgetter(0), worker_skills))
+                        
+                        skill_name, _ = skill
+                        skill_index = skill_names.index(skill_name)
+                        _, workers_level = worker_skills[skill_index]
+
+                        w.get("skills").remove(skill_index)
+                        w.get("skills").append((skill_name, workers_level + 1))
+
+                    available_contributors.append(w)
+            
+            else:
+                available_contributors.extend(workers)
 
         for project in deepcopy(projects_available):
             if project_score(project, time) == 0:
                 projects_available.remove(project)                
 
             workers = list()
+            level_ups = list()
 
             for role in project.get("roles"):
                 satisfied = False
 
                 for c in available_contributors:
-                    if has_skill_level(c, role, workers) and c not in workers:
+                    is_skilled, level_up = has_skill_level(c, role, workers)
+                    
+                    if is_skilled and c not in workers:
+                        level_ups.append(level_up)
                         workers.append(c)
                         satisfied = True
+
                         break
 
                 if not satisfied:
@@ -71,12 +99,19 @@ def naive(contributors, projects):
             
             end_time = time + project.get("D")
 
-            projects_in_progress.append((project, workers, end_time))
+            projects_in_progress.append((project, workers, level_ups, end_time))
             organised_projects.append((project, workers))
 
             projects_available.remove(project)
 
         time += 1
+
+        pbar.set_postfix(in_progress=len(projects_in_progress),
+                         organised=len(organised_projects),
+                         available=len(projects_available),
+                         time=time)
+
+        pbar.update()
 
     return organised_projects
 
@@ -86,4 +121,3 @@ if __name__ == "__main__":
 
     results = naive(c, p)
     pprint(results)
-    #export(results, f"output/{fname}")
