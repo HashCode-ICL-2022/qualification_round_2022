@@ -82,7 +82,8 @@ def naive(contributors, projects):
 
         for project in deepcopy(projects_available):
             if project_score(project, time) == 0:
-                projects_available.remove(project)                
+                projects_available.remove(project)    
+                continue            
 
             workers = list()
             level_ups = list()
@@ -134,10 +135,10 @@ def naive(contributors, projects):
 if __name__ == "__main__":
     #fname = "a_an_example.in.txt"
     #fname = "b_better_start_small.in.txt"
-    fname = "c_collaboration.in.txt"
+    #fname = "c_collaboration.in.txt"
     #fname = "d_dense_schedule.in.txt"
     #fname = "e_exceptional_skills.in.txt"
-    #fname = "f_find_great_mentors.in.txt"
+    fname = "f_find_great_mentors.in.txt"
 
     c, p = load(f"data/{fname}")
 
