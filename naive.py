@@ -22,6 +22,7 @@ def has_skill_level(c, role, workers):
     elif role[1] == level + 1:
         for w in workers:
             can_mentor, _ = has_skill_level(w, role, [])
+            
             if can_mentor:
                 return True, True
 
@@ -129,16 +130,16 @@ def naive(contributors, projects):
                          available=len(projects_available),
                          time=time)
 
-        pbar.update()
+        pbar.update(len(organised_projects) - pbar.n)
 
     return organised_projects
 
 if __name__ == "__main__":
     #fname = "a_an_example.in.txt"
-    fname = "b_better_start_small.in.txt"
+    #fname = "b_better_start_small.in.txt"
     #fname = "c_collaboration.in.txt"
     #fname = "d_dense_schedule.in.txt"
-    #fname = "e_exceptional_skills.in.txt"
+    fname = "e_exceptional_skills.in.txt"
     #fname = "f_find_great_mentors.in.txt"
 
     c, p = load(f"data/{fname}")
