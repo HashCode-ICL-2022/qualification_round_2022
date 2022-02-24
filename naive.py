@@ -1,7 +1,7 @@
 
 from operator import itemgetter
 from import_file import load
-#from export_file import export
+from export_file import export
 
 from copy import deepcopy
 from pprint import pprint
@@ -43,35 +43,42 @@ def naive(contributors, projects):
 
     pbar = tqdm(total=len(projects_available))
 
-    while len(projects_available) > 0:
+    project_allocated = True
+
+    while project_allocated or len(projects_in_progress) > 0:
 
         for i, (project, workers, level_ups, end_time) in enumerate(deepcopy(projects_in_progress)):
             if end_time > time:
                 continue
 
-            projects_in_progress.pop(i)
-
-            print(level_ups)
+            projects_in_progress.remove((project, workers, level_ups, end_time))
 
             if any(level_ups):
-                for lu, w, skill in zip(level_ups, workers, project.get("roles")):
+
+                for lu, w, role in zip(level_ups, workers, project.get("roles")):
+
                     if lu:
+                        role_name, _ = role
                         worker_skills = w.get("skills")
                         skill_names = list(map(itemgetter(0), worker_skills))
+
+                        if role_name in skill_names:
+                            i = skill_names.index(role_name)
+                            _, workers_level = worker_skills[i]
+
+                            w.get("skills").pop(i)
                         
-                        skill_name, _ = skill
-                        skill_index = skill_names.index(skill_name)
-                        _, workers_level = worker_skills[skill_index]
+                        else:
+                            workers_level = 0
 
-                        w.get("skills").pop(skill_index)
-                        w.get("skills").append((skill_name, workers_level + 1))
-
-                        print(w.get("name"), workers_level, workers_level + 1)
+                        w.get("skills").append((role_name, workers_level + 1))
 
                     available_contributors.append(w)
             
             else:
                 available_contributors.extend(workers)
+
+        project_allocated = False
 
         for project in deepcopy(projects_available):
             if project_score(project, time) == 0:
@@ -87,6 +94,7 @@ def naive(contributors, projects):
                     is_skilled, level_up = has_skill_level(c, role, workers)
                     
                     if is_skilled and c not in workers:
+
                         level_ups.append(level_up)
                         workers.append(c)
                         satisfied = True
@@ -99,6 +107,7 @@ def naive(contributors, projects):
             if not satisfied:
                 continue
 
+            project_allocated = True
             [available_contributors.remove(c) for c in workers]
             
             end_time = time + project.get("D")
@@ -108,7 +117,10 @@ def naive(contributors, projects):
 
             projects_available.remove(project)
 
-        time += 1
+        if len(projects_in_progress) > 0:
+            time = min(map(itemgetter(3), projects_in_progress))
+        else:
+            time += 1
 
         pbar.set_postfix(in_progress=len(projects_in_progress),
                          organised=len(organised_projects),
@@ -120,8 +132,16 @@ def naive(contributors, projects):
     return organised_projects
 
 if __name__ == "__main__":
-    fname = "a_an_example.in.txt"
+    #fname = "a_an_example.in.txt"
+    #fname = "b_better_start_small.in.txt"
+    fname = "c_collaboration.in.txt"
+    #fname = "d_dense_schedule.in.txt"
+    #fname = "e_exceptional_skills.in.txt"
+    #fname = "f_find_great_mentors.in.txt"
+
     c, p = load(f"data/{fname}")
 
     results = naive(c, p)
     pprint(results)
+
+    export(results, f"outputs/{fname}")
