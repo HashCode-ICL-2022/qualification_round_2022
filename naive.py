@@ -4,6 +4,7 @@ from import_file import load
 #from export_file import export
 
 from copy import deepcopy
+from pprint import pprint
 
 def has_skill_level(c, role, workers):
     skills, levels = zip(*c.get("skills"))
@@ -29,7 +30,7 @@ def project_score(p, t):
 
 def naive(contributors, projects):
     available_contributors = deepcopy(contributors)
-    projects_available = deepcopy(projects).sort(key=itemgetter("B"))
+    projects_available = sorted(deepcopy(projects), key=itemgetter("B"))
 
     projects_in_progress = list()
     organised_projects = list()
@@ -38,7 +39,7 @@ def naive(contributors, projects):
 
     while len(projects_available) > 0:
 
-        for i, project, workers, end_time in enumerate(deepcopy(projects_in_progress)):
+        for i, (project, workers, end_time) in enumerate(deepcopy(projects_in_progress)):
             if end_time > time:
                 continue
 
@@ -83,8 +84,6 @@ if __name__ == "__main__":
     fname = "a_an_example.in.txt"
     c, p = load(f"data/{fname}")
 
-    print(c, p)
-
     results = naive(c, p)
-    print(results)
+    pprint(results)
     #export(results, f"output/{fname}")
