@@ -33,13 +33,16 @@ def project_score(p, t):
     return min(p.get("S"), max(p.get("S") - (p.get("D") + t - p.get("B")), 0))
 
 def naive(contributors, projects):
+    projects = [p for p in projects if p.get("R") < 15]
+
     available_contributors = deepcopy(contributors)
-    projects_available = sorted(deepcopy(projects), key=itemgetter("B"))
+    projects_available = sorted(deepcopy(projects), key=itemgetter("D"))
 
     projects_in_progress = list()
     organised_projects = list()
 
     time = 0
+    total_score = 0
 
     print("Running Naive Algorithm")
 
@@ -53,7 +56,11 @@ def naive(contributors, projects):
             if end_time > time:
                 continue
 
-            projects_in_progress.remove((project, workers, level_ups, end_time))
+            with open("outputs/f_find_great_mentors.in.txt", 'a') as file:
+                file.write(project['name'] + '\n')
+                file.write(' '.join([person['name'] for person in workers]) + "\n")
+
+                projects_in_progress.remove((project, workers, level_ups, end_time))
 
             if any(level_ups):
 
@@ -83,7 +90,9 @@ def naive(contributors, projects):
         project_allocated = False
 
         for project in deepcopy(projects_available):
-            if project_score(project, time) == 0:
+            possible_project_score = project_score(project, time)
+
+            if possible_project_score == 0:
                 projects_available.remove(project)    
                 continue            
 
@@ -111,6 +120,8 @@ def naive(contributors, projects):
                 continue
 
             project_allocated = True
+            total_score += possible_project_score
+
             [available_contributors.remove(c) for c in workers]
             
             end_time = time + project.get("D")
@@ -139,8 +150,8 @@ if __name__ == "__main__":
     #fname = "b_better_start_small.in.txt"
     #fname = "c_collaboration.in.txt"
     #fname = "d_dense_schedule.in.txt"
-    fname = "e_exceptional_skills.in.txt"
-    #fname = "f_find_great_mentors.in.txt"
+    #fname = "e_exceptional_skills.in.txt"
+    fname = "f_find_great_mentors.in.txt"
 
     c, p = load(f"data/{fname}")
 
